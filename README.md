@@ -1,6 +1,6 @@
 
 <h1 align="center" >
-    <img src="#">
+    <img src=https://user-images.githubusercontent.com/63620799/167208066-3d935a78-e203-4f8c-be27-fd3ff210828b.gif>
 </h1>
 <h2 align="center" >
     Python Script that convert your repository to PDF<br>
@@ -57,12 +57,16 @@ So, for the magic to happen, execute the next command:
 
 Examples:
 
-`python generate_pdf.py --style tango /home/alfonso/PycharmProjects/blog/`
+```python
+    python generate_pdf.py --style tango /home/alfonso/PycharmProjects/blog/
 
-`python generate_pdf.py /home/alfonso/PycharmProjects/colombian_newspapers`
+    python generate_pdf.py /home/alfonso/PycharmProjects/colombian_newspapers
 
-`python -m generate_pdf /home/alfonso/PycharmProjects/xml-to-json`
+    python -m generate_pdf /home/alfonso/PycharmProjects/xml-to-json
+    
+    python generate_pdf.py C:\Users\Alfonso\PycharmProjects\ScrappingColombianNewspapers
+```
 
-In case you want to change the theme, you can choose it from the next list:
+In case you want to change the **theme**, you can choose it from the next list:
 
 bw, sas, xcode, autumn, borland, arduino, igor, lovelace, pastie, rainbow_dash, emacs, tango, colorful, rrt, algol ou abap.
