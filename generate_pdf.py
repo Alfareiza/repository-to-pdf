@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
@@ -12,64 +13,72 @@ class RepoToPDF:
     """
     This class convert repository to pdf where this must be already cloned
     """
+    # Standard Stuffs
+    gitignore_stuff = [
+        ".pdf",
+        "__init__.py",
+        "__pycache__",
+        ".gitignore",
+        ".git/",
+        "LICENSE",
+        ".github/",
+        "README.md",
+        "requirements.txt",
+        "pyproject.toml", "poetry.lock",
+        "Pipfile", "Pipfile.lock",
+        ".idea/",
+        "env-sample",
+        ".flake8",
+        ".yml", ".xml", ".txt",
+        "setup.cfg", "Procfile"
+        "pytest.ini",
+    ]
+    # Django Stuffs
+    gitignore_stuff += [
+        "manage.py",
+        "migrations/",
+        "static/",
+        "test_files/",
+        "test/",
+        "tests/",
+        "testes/",
+        "test.py",
+        "tests.py",
+        "wsgi.py",
+        "asgi.py",
+        "settings.py",
+    ]
 
     def __init__(self, directory, style="colorful"):
         self.directory = Path(str(directory))
         self.style = style
-        self.name_repository = str(directory).strip("/").split("/")[-1]
-        self.ignored_files = self.ignored_files()
+        self.name_repository = str(directory).strip(os.sep).split(os.sep)[-1]
+        self.ignored_files = RepoToPDF.gitignore_stuff + self.ignore_files()
         self.files_to_convert = self.select_files(self.directory)
         self.tree = self.create_tree(self.directory)
 
-    def ignored_files(self) -> List[str]:
+    def ignore_files(self) -> List[str]:
         """
         Scrap the gitignore file it it exists and prepare all the stuffs that must be ignored.
         :return: List of strings, that depicts the files/folders scrapped from .gitignore file.
         """
-        # Standard Stuffs
-        gitignore_stuff = [
-            ".pdf",
-            "__init__.py",
-            "__pycache__",
-            ".gitignore",
-            ".git",
-            "LICENSE",
-            ".github",
-            "README.md",
-            "requirements.txt",
-            "pyproject.toml",
-            "poetry.lock",
-            ".idea",
-            "env-sample",
-            "merged.html",
-        ]
-        # Django Stuffs
-        gitignore_stuff += [
-            "manage.py",
-            "migrations/",
-            "static/",
-            "test_files/",
-            "test/",
-            "testes/",
-            "test.py",
-            "tests.py",
-            "wsgi.py",
-            "asgi.py",
-            "settings.py",
-        ]
+
         gitignore_content = []
         if self.directory.joinpath(".gitignore").exists():
             with self.directory.joinpath(".gitignore").open() as fp:
                 content = fp.readlines()
                 for i in content:
                     line = i.strip()
-                    if len(line) > 0 and not "#" in line:
+                    if len(line) > 0 and "#" not in line:
                         gitignore_content.append(line.strip("*"))
         else:
             print(
                 "Since the .gitignore file doesn't exists, all the files will be considered"
             )
-        return gitignore_content + gitignore_stuff
+        return gitignore_content
+
+    def add_ignore_files(self, new_ignore_stuff: List[str]) -> None:
+        self.ignored_files += new_ignore_stuff
 
     def select_files(self, directory: Path, files_selected=[]) -> List[Path]:
         """
@@ -96,9 +105,9 @@ class RepoToPDF:
         if filename.is_dir() and f"{filename.name}/" in self.ignored_files:
             return True
         elif (
-            filename.is_file()
-            and filename.suffix in self.ignored_files
-            or filename.name in self.ignored_files
+                filename.is_file()
+                and filename.suffix in self.ignored_files
+                or filename.name in self.ignored_files
         ):
             return True
 
@@ -114,9 +123,9 @@ class RepoToPDF:
             # filtered_path = False
             ignore = ("__pycache__/", "__init__.py")
             if (
-                path.name.startswith(".")
-                or path.name.startswith("__")
-                or path.name in ignore
+                    path.name.startswith(".")
+                    or path.name.startswith("__")
+                    or path.name in ignore
             ):
                 return False
             return True
@@ -143,15 +152,17 @@ class RepoToPDF:
                 if parent == self.name_repository:
                     path_file = "/".join(file.parts[i:])
                     break
+        try:
+            with open(file, 'r', encoding='cp850', errors='replace') as fp:
+                content = fp.read()
+        except UnicodeEncodeError as e:
+            print(f"File {file.stem} unreadable\n{e}")
+            content = 'Unreadable content'
+        except Exception as e:
+            print(e)
+            content = e
 
-        with open(file) as fp:
-            content = fp.read()
-
-        content = (
-            f"{str(path_file)} \n{content}"
-            if content
-            else f"{str(file)} \nEmpty File"
-        )
+        content = f'{path_file} \n{content}' if content else f'{file} \nEmpty File'
 
         lexer = get_lexer_by_name("python", stripall=True)
         formatter = HtmlFormatter(
@@ -174,7 +185,7 @@ class RepoToPDF:
         for file in sorted(temp_folder.iterdir(), key=lambda d: len(d.stem)):
             if file.suffix == ".html":
                 # append html files
-                with open(file, "r") as f:
+                with open(file, 'r', encoding='cp850', errors='replace') as f:
                     html = f.read()
                     empty_html = empty_html.replace(
                         "</body></html>", html + "</body></html>"
@@ -184,25 +195,29 @@ class RepoToPDF:
         with TemporaryDirectory() as temp:
             merged_file = Path(temp) / "00.html"
 
-            with merged_file.open(mode="w+") as merged:
+            with merged_file.open(mode="w+", encoding='cp850', errors='replace') as merged:
                 merged.write(empty_html)
+                try:
+                    # config = pdfkit.configuration(wkhtmltopdf='C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
 
-                # Creates pdf
-                pdfkit.from_file(
-                    str(merged_file),
-                    output_path=f"{str(self.directory)}/{self.name_repository}.pdf",
-                    options={
-                        "encoding": "UTF-8",
-                        "margin-top": "0.15in",
-                        "margin-right": "0.45in",
-                        "margin-bottom": "0.15in",
-                        "margin-left": "0.45in",
-                    },
-                )
-
-        print(
-            f"File {str(self.directory)}/{self.name_repository}.pdf generated with success!"
-        )
+                    # Creates pdf
+                    pdfkit.from_file(
+                        str(merged_file),
+                        output_path=f"{str(self.directory)}/{self.name_repository}.pdf",
+                        options={
+                            "encoding": "UTF-8",
+                            "margin-top": "0.15in",
+                            "margin-right": "0.45in",
+                            "margin-bottom": "0.15in",
+                            "margin-left": "0.45in",
+                        },
+                    )
+                    print(
+                        f"File {str(self.directory)}{os.sep}{self.name_repository}.pdf generated with success!"
+                    )
+                except OSError:
+                    print("Please install wkhtmltopdf"
+                          " https://github.com/JazzCore/python-pdfkit/wiki/Installing-wkhtmltopdf")
 
     def generate_pdf(self):
         # Creates temp folder
@@ -211,22 +226,23 @@ class RepoToPDF:
 
             for file in self.files_to_convert:
                 html_content = self.generate_html(file, header_path=True)
+
                 name_html_file = "_".join(
-                    file.parts[file.parts.index(self.name_repository) :]
+                    file.parts[file.parts.index(self.name_repository):]
                 ).replace(file.name, f"{file.stem}.html")
                 html_file = temp_dir / name_html_file
 
                 # Creates html temp files
-                with html_file.open(mode="w+") as file:
+                with html_file.open(mode="w+", encoding='cp850', errors='replace') as file:
                     file.write(html_content)
 
             tree_file = temp_dir / "tree.txt"
-            with tree_file.open(mode="w+") as tree:
+            with tree_file.open(mode="w+", encoding='cp850', errors='replace') as tree:
                 tree.write(self.tree)
 
             html_content = self.generate_html(tree_file)
             html_file = temp_dir / "00_tree.html"
-            with html_file.open(mode="w+") as html:
+            with html_file.open(mode="w+", encoding='cp850', errors='replace') as html:
                 html.write(html_content)
 
             # Create pdf from html temp files in temp_dir
@@ -329,28 +345,26 @@ if __name__ == "__main__":
         type=str,
         help="Style for the PDF. Choose a style -> https://pygments.org/styles/",
     )
-
+    parser.add_argument(
+        "--ignore",
+        type=str,
+        nargs='?',
+        help="Add files and/or folders for ignoring.",
+    )
     # Creating a Namespace object
     args = parser.parse_args()
     try:
         if args.style:
             choices = [
-                "default",
-                "bw",
-                "sas",
-                "xcode",
-                "autumn",
-                "borland",
-                "arduino",
-                "igor",
-                "lovelace",
-                "pastie",
+                "default", "bw",
+                "sas", "xcode",
+                "autumn", "borland",
+                "arduino", "igor",
+                "lovelace", "pastie",
                 "rainbow_dash",
-                "emacs",
-                "tango",
+                "emacs", "tango",
                 "colorful",
-                "rrt",
-                "algol",
+                "rrt", "algol",
                 "abap",
             ]
             if not args.style in choices:
