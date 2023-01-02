@@ -69,4 +69,19 @@ Examples:
 
 In case you want to change the **theme**, you can choose it from the next list:
 
-bw, sas, xcode, autumn, borland, arduino, igor, lovelace, pastie, rainbow_dash, emacs, tango, colorful, rrt, algol ou abap.
+- bw
+- sas
+- xcode
+- autumn
+- borland
+- arduino
+- igor
+- lovelace
+- pastie
+- rainbow_dash
+- emacs
+- tango
+- colorful
+- rrt
+- algol
+- abap
